@@ -1,0 +1,7 @@
+bin/
+obj/
+Output/
+*.csv
+.vscode/
+.DS_Store
+FitSDK/.git-backup/
