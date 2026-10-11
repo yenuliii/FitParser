@@ -32,7 +32,7 @@ try
 
     FitFileChecker checker = new FitFileChecker();
 
-    FitValidationResult validationResult =
+    var validationResult =
         checker.Validate(inputFilePath, checkIntegrity);
 
     if (!validationResult.IsValid)
