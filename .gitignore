@@ -2,6 +2,9 @@ bin/
 obj/
 Output/
 *.csv
+*.fit
 .vscode/
 .DS_Store
 FitSDK/.git-backup/
+FitSDKTools/
+

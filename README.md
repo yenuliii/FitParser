@@ -7,12 +7,19 @@ Start date: Wednesday, October 7th, 2026
 
 run with --> 
 
-cd ~/Desktop/"fit_csv/program v2/FitParser"
+cd ~/Desktop/"sycamore/program_v2/FitParser"
 
 dotnet build FitParser.Console/FitParser.Console.csproj
 
 dotnet run --project FitParser.Console/FitParser.Console.csproj
 
-/Users/yenulidesilva/Desktop/fit_csv/program v2/FitParser/yourfile.fit
+/Users/ /Desktop/fit_csv/program v2/FitParser/yourfile.fit
 
-/Users/yenulidesilva/Desktop/fit_csv/program v2/FitParser/Output/activity3.csv
+/Users/ /Desktop/fit_csv/program v2/FitParser/FitOutput/activity3.csv
+
+TODO: 
+Work on implementing a way for the user to select time-period ( so must convert times, epoch, combine same timestaps, and what not ) 
+and implement a way for the user to select exactly which message they want. 
+
+Test TODO: 
+Check data intergrity

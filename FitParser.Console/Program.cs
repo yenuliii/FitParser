@@ -11,7 +11,7 @@
 
 using FitParser.Core;
 
-Console.WriteLine("FIT File Parser");
+Console.WriteLine("Yeni's FIT File Parser");
 Console.WriteLine("----------------");
 
 string inputFilePath = GetPath(

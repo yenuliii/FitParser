@@ -33,7 +33,11 @@ public sealed class MessageCollection
         _messages.Clear();
     }
 
-    // Temporary CSV output support while a separate exporter is not included.
+//TODO: when reporting timestamps must indicate what kind of timestamp 
+// TODO: must indicate what kind of message 
+// WARNING: All data is extracted as retrieved from the file. Some data is stored with scales and offsets and need mathematical conversion to get the real value. 
+// so our goal is to be able to select what data we want to extract and between what time periods 
+// so our next step would be getting the message extracted in a way we can do this / right here \ 
     public void SaveAsCsv(string outputFilePath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(outputFilePath);
@@ -41,28 +45,45 @@ public sealed class MessageCollection
         using StreamWriter writer = new(outputFilePath);
 
         writer.WriteLine(
-            "MessageIndex,MessageType,MessageNumber,FieldName,Value");
+            "Message Index, Message Name, Message Number, Field Name, Field Number, ClrDataType, Value");
 
         for (int messageIndex = 0;
              messageIndex < _messages.Count;
              messageIndex++)
         {
-            NormalizedMessage message = _messages[messageIndex];
+            NormalizedMessage message =
+                _messages[messageIndex];
 
             foreach (NormalizedField field in message.Fields)
             {
                 foreach (object? value in field.Values)
                 {
-                    string valueText = Convert.ToString(
-                        value,
-                        CultureInfo.InvariantCulture) ?? "";
+                    string valueText =
+                        Convert.ToString(
+                            value,
+                            CultureInfo.InvariantCulture) ?? "";
 
                     writer.WriteLine(string.Join(
                         ",",
-                        EscapeCsv((messageIndex + 1).ToString()),
-                        EscapeCsv(message.MessageType),
-                        EscapeCsv(message.MessageNumber.ToString()),
-                        EscapeCsv(field.Name),
+                        EscapeCsv(
+                            (messageIndex + 1).ToString(
+                                CultureInfo.InvariantCulture)),
+
+
+                        EscapeCsv(message.MessageName),
+
+                        EscapeCsv(
+                            message.MessageNumber.ToString(
+                                CultureInfo.InvariantCulture)),
+
+                        EscapeCsv(field.FieldName),
+
+                        EscapeCsv(
+                            field.FieldNumber.ToString(
+                                CultureInfo.InvariantCulture)),
+
+                        EscapeCsv(field.ClrDataType ?? ""),
+
                         EscapeCsv(valueText)));
                 }
             }
