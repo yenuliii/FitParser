@@ -1,7 +1,3 @@
-
-// WARNING: All data will be shown as the values retrieved from the file. Some data is stored with scales and offsets 
-// and need mathematical conversion to get the real value. 
-
 /*
 WARNING:
 All data will be shown as the values retrieved from the file.
@@ -41,9 +37,9 @@ public sealed class CsvExporter
                 foreach (object? value in field.Values)
                 {
                     string valueText =
-                        Convert.ToString(
+                        FitDateTimeFormatter.Format(
                             value,
-                            CultureInfo.InvariantCulture) ?? "";
+                            field.FitDataType);
 
                     writer.WriteLine(string.Join(
                         ",",
