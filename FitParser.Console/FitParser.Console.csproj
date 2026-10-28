@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../FitParser.Core/FitParser.Core.csproj" />
-    <ProjectReference Include="../FitParser.Export/FitParser.Export.csproj" />
+    <ProjectReference Include="../FitParser.Extract/FitParser.Extract.csproj" />
+    <ProjectReference Include="../FitParser.Format/FitParser.Format.csproj" />
   </ItemGroup>
 
 </Project>

@@ -37,3 +37,7 @@ cause they can be derived from their respective numbers.
 
 None the less lets keep this modular and abstract and do all the further processing and extraction i t
 alked about before in the exporter! Should I name the FitParser.Core to FitParser.Extracter? cause thats what it does? 
+and then we can change Exporters name to Formatter? cause it formats the time, formats to csv, json, etcetera! 
+
+// also show units! 
+

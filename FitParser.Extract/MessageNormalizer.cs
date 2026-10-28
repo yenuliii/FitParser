@@ -1,6 +1,8 @@
 /*
-GET more information about message names, numbers and other information from FitSDKTools/Profile.xlsx
+GET more information about message names, numbers and other information
+from FitSDKTools/Profile.xlsx
 */
+
 using System.Collections.ObjectModel;
 using Dynastream.Fit;
 
@@ -34,11 +36,22 @@ public sealed class MessageNormalizer
                 .GetType()
                 .FullName;
 
+            Field? profileField =
+                Profile.GetField(message.Num, field.Num);
+
+            string? fitDataType = null;
+
+            if (profileField is not null)
+            {
+                fitDataType =
+                    profileField.ProfileType.ToString();
+            }
 
             fields.Add(
                 new NormalizedField(
                     fieldName,
                     field.Num,
+                    fitDataType,
                     clrDataType,
                     values.AsReadOnly()));
         }
@@ -48,6 +61,7 @@ public sealed class MessageNormalizer
             message.Num,
             fields.AsReadOnly());
     }
+
 }
 
 public sealed class NormalizedMessage
@@ -80,6 +94,8 @@ public sealed class NormalizedField
 
     public int FieldNumber { get; }
 
+    public string? FitDataType { get; }
+
     public string? ClrDataType { get; }
 
     public IReadOnlyList<object?> Values { get; }
@@ -87,6 +103,7 @@ public sealed class NormalizedField
     public NormalizedField(
         string fieldName,
         int fieldNumber,
+        string? fitDataType,
         string? clrDataType,
         IReadOnlyList<object?> values)
     {
@@ -95,6 +112,7 @@ public sealed class NormalizedField
 
         FieldName = fieldName;
         FieldNumber = fieldNumber;
+        FitDataType = fitDataType;
         ClrDataType = clrDataType;
 
         Values = new ReadOnlyCollection<object?>(

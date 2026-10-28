@@ -10,6 +10,8 @@
 */
 
 using FitParser.Core;
+using FitParser.Export;
+
 
 Console.WriteLine("Yeni's FIT File Parser");
 Console.WriteLine("----------------");
@@ -76,7 +78,8 @@ try
         Directory.CreateDirectory(outputDirectory);
     }
 
-    collection.SaveAsCsv(outputFilePath);
+    CsvExporter exporter = new();
+    exporter.Export(collection, outputFilePath);
 
     Console.WriteLine();
     Console.WriteLine("FIT file decoded successfully.");
