@@ -23,7 +23,7 @@ public sealed class CsvExporter
         using StreamWriter writer = new(outputFilePath);
 
         writer.WriteLine(
-            "Message Index,Message Name,Message Number,Field Name,Field Number,FitDataType,ClrDataType,Value");
+            "Message Index,Message Name,Message Number,Field Name,Field Number,FitDataType,ClrDataType,Value,Units");
 
         for (int messageIndex = 0;
              messageIndex < collection.Messages.Count;
@@ -40,6 +40,9 @@ public sealed class CsvExporter
                         FitDateTimeFormatter.Format(
                             value,
                             field.FitDataType);
+
+                    string outputUnits =
+                        GetOutputUnits(field);
 
                     writer.WriteLine(string.Join(
                         ",",
@@ -63,10 +66,33 @@ public sealed class CsvExporter
 
                         EscapeCsv(field.ClrDataType ?? ""),
 
-                        EscapeCsv(valueText)));
+                        EscapeCsv(valueText),
+
+                        EscapeCsv(outputUnits)));
                 }
             }
         }
+    }
+
+    private static string GetOutputUnits(NormalizedField field)
+    {
+        if (string.Equals(
+                field.FitDataType,
+                "DateTime",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "UTC";
+        }
+
+        if (string.Equals(
+                field.FitDataType,
+                "LocalDateTime",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Local time";
+        }
+
+        return field.Units ?? string.Empty;
     }
 
     private static string EscapeCsv(string value)

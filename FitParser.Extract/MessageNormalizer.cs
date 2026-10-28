@@ -40,11 +40,17 @@ public sealed class MessageNormalizer
                 Profile.GetField(message.Num, field.Num);
 
             string? fitDataType = null;
+            string? units = null;
 
             if (profileField is not null)
             {
                 fitDataType =
                     profileField.ProfileType.ToString();
+
+                units =
+                    string.IsNullOrWhiteSpace(profileField.Units)
+                        ? null
+                        : profileField.Units;
             }
 
             fields.Add(
@@ -53,6 +59,7 @@ public sealed class MessageNormalizer
                     field.Num,
                     fitDataType,
                     clrDataType,
+                    units,
                     values.AsReadOnly()));
         }
 
@@ -61,7 +68,6 @@ public sealed class MessageNormalizer
             message.Num,
             fields.AsReadOnly());
     }
-
 }
 
 public sealed class NormalizedMessage
@@ -98,6 +104,8 @@ public sealed class NormalizedField
 
     public string? ClrDataType { get; }
 
+    public string? Units { get; }
+
     public IReadOnlyList<object?> Values { get; }
 
     public NormalizedField(
@@ -105,6 +113,7 @@ public sealed class NormalizedField
         int fieldNumber,
         string? fitDataType,
         string? clrDataType,
+        string? units,
         IReadOnlyList<object?> values)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fieldName);
@@ -114,6 +123,7 @@ public sealed class NormalizedField
         FieldNumber = fieldNumber;
         FitDataType = fitDataType;
         ClrDataType = clrDataType;
+        Units = units;
 
         Values = new ReadOnlyCollection<object?>(
             values.ToList());
