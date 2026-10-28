@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../FitParser.Extract/FitParser.Extract.csproj" />
-    <ProjectReference Include="../FitParser.Format/FitParser.Format.csproj" />
+    <ProjectReference Include="../FitParser.Export/FitParser.Format.csproj" />
   </ItemGroup>
 
 </Project>

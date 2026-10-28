@@ -28,3 +28,5 @@ and implement a way for the user to select exactly which message they want.
 
 Test TODO: 
 Check data intergrity
+
+TODO: mention whether uses scales and offsets. 
