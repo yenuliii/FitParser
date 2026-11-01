@@ -1,11 +1,17 @@
 /* 
 1. List the message types available in MessageCollection.
 2. Return a new MessageCollection containing only the selected messages.
+
+Finds which message types exist.
+Groups messages by MessageNumber.
+Reports message names and occurrence counts.
+Returns a new collection containing only selected message types.
+
 */ 
 
-using FitParser.Core;
+namespace FitParser.Select;
 
-namespace FitParser.Export;
+using FitParser.Models;
 
 public sealed record AvailableMessage(
     int MessageNumber,
@@ -14,8 +20,9 @@ public sealed record AvailableMessage(
 
 public sealed class MessageSelector
 {
-    public IReadOnlyList<AvailableMessage> GetAvailableMessages(
-        MessageCollection collection)
+    public IReadOnlyList<AvailableMessage>
+        GetAvailableMessages(
+            MessageCollection collection)
     {
         ArgumentNullException.ThrowIfNull(collection);
 
@@ -31,19 +38,21 @@ public sealed class MessageSelector
                     firstMessage.MessageName,
                     group.Count());
             })
+            .OrderBy(message => message.MessageName)
+            .ThenBy(message => message.MessageNumber)
             .ToList()
             .AsReadOnly();
     }
 
-    public MessageCollection SelectMessage(
+    public MessageCollection SelectMessages(
         MessageCollection collection,
         IReadOnlySet<int> selectedMessageNumbers)
     {
         ArgumentNullException.ThrowIfNull(collection);
-        ArgumentNullException.ThrowIfNull(selectedMessageNumbers);
+        ArgumentNullException.ThrowIfNull(
+            selectedMessageNumbers);
 
-        MessageCollection selectedMessages =
-            new();
+        MessageCollection selectedMessages = new();
 
         IEnumerable<NormalizedMessage> matchingMessages =
             collection.Messages
@@ -51,7 +60,8 @@ public sealed class MessageSelector
                     selectedMessageNumbers.Contains(
                         message.MessageNumber));
 
-        selectedMessages.AddRange(matchingMessages);
+        selectedMessages.AddRange(
+            matchingMessages);
 
         return selectedMessages;
     }

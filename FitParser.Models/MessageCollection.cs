@@ -1,14 +1,17 @@
-namespace FitParser.Core;
+namespace FitParser.Models;
 
 public sealed class MessageCollection
 {
     private readonly List<NormalizedMessage> _messages = new();
 
-    public IReadOnlyList<NormalizedMessage> Messages => _messages;
+    public IReadOnlyList<NormalizedMessage> Messages =>
+        _messages;
 
-    public int Count => _messages.Count;
+    public int Count =>
+        _messages.Count;
 
-    public void Add(NormalizedMessage message)
+    public void Add(
+        NormalizedMessage message)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -30,5 +33,4 @@ public sealed class MessageCollection
     {
         _messages.Clear();
     }
-
 }

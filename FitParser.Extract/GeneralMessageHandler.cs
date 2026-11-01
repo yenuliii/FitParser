@@ -1,6 +1,9 @@
-using Dynastream.Fit;
+/*
+*/ 
 
-namespace FitParser.Core;
+namespace FitParser.Extract;
+
+using Dynastream.Fit;
 
 public sealed class GeneralMessageHandler
 {

@@ -9,8 +9,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../FitParser.Extract/FitParser.Extract.csproj" />
-    <ProjectReference Include="../FitParser.Export/FitParser.Format.csproj" />
+    <ProjectReference Include="../FitParser.Models/FitParser.Models.csproj" />
+    <ProjectReference Include="../FitParser.Select/FitParser.Select.csproj" />
+    <ProjectReference Include="../FitParser.Export/FitParser.Export.csproj" />
   </ItemGroup>
 
 </Project>
-

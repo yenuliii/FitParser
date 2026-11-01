@@ -10,7 +10,7 @@
  
 using Dynastream.Fit;
 
-namespace FitParser.Core;
+namespace FitParser.Extract;
 
 public sealed class FitFileDecoder
 {

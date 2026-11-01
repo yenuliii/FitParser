@@ -1,9 +1,10 @@
+namespace FitParser.Extract;
+
 using Dynastream.Fit;
 
 using GarminMessageBroadcaster =
     Dynastream.Fit.MesgBroadcaster;
 
-namespace FitParser.Core;
 
 public sealed class MessageBroadcaster
 {

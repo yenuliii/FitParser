@@ -9,9 +9,9 @@ takes in the value as a FIT Epoch and returns a calendar date
 
 */
 
-using System.Globalization;
-
 namespace FitParser.Export;
+
+using System.Globalization;
 
 public static class FitDateTimeFormatter
 {

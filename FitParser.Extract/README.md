@@ -1,3 +1,4 @@
+Conceptually Extract does this: 
 FitFileChecker.cs 
 receives file from input, verifies the file can be opened and is a valid FIT file.
 
@@ -23,6 +24,26 @@ easier to process any message type if theyre in one format.
 
 MessageCollection.cs
 receives normalized message, stores the normalized messages for further processing. 
+
+But Extract does it like this: 
+FitFileExtractor
+    │
+    ├── sends file path to FitFileChecker
+    │
+    ├── creates GeneralMessageHandler
+    │
+    ├── creates MessageBroadcaster(handler)
+    │
+    ├── creates FitFileDecoder(broadcaster)
+    │
+    ├── sends file path to FitFileDecoder
+    │
+    ├── receives raw messages from handler
+    │
+    └── sends raw messages to MessageNormalizer
+                         │
+                         └── returns MessageCollection
+                         
 
 TODO: 
 // so our goal is to be able to select what data we want to extract and between what time periods 

@@ -1,16 +1,61 @@
 /*
-GET more information about message names, numbers and other information
-from FitSDKTools/Profile.xlsx
+Gets more information about message names, numbers,
+and other information from FitSDKTools/Profile.xlsx.
+
+Takes decoded FIT messages and normalizes them.
+
+The normalizer:
+- extracts message information
+- extracts field information
+- extracts values
+- extracts data types and units
+- assigns each message a read-only index
 */
 
-using System.Collections.ObjectModel;
-using Dynastream.Fit;
+namespace FitParser.Extract;
 
-namespace FitParser.Core;
+using Dynastream.Fit;
+using FitParser.Models;
 
 public sealed class MessageNormalizer
 {
-    public NormalizedMessage Normalize(Mesg message)
+    /*
+     * Normalizes every raw FIT message and assigns
+     * a read-only MessageIndex to each message.
+     */
+    public MessageCollection NormalizeAll(
+        IEnumerable<Mesg> messages)
+    {
+        ArgumentNullException.ThrowIfNull(messages);
+
+        MessageCollection collection = new();
+
+        int messageIndex = 1;
+
+        foreach (Mesg message in messages)
+        {
+            NormalizedMessage normalizedMessage =
+                NormalizeMessage(
+                    message,
+                    messageIndex);
+
+            collection.Add(normalizedMessage);
+
+            messageIndex++;
+        }
+
+        return collection;
+    }
+
+    /*
+     * Normalizes one raw FIT message.
+     *
+     * This method is private so callers cannot forget
+     * to assign a MessageIndex.
+     */
+    private NormalizedMessage NormalizeMessage(
+        Mesg message,
+        int messageIndex)
     {
         ArgumentNullException.ThrowIfNull(message);
 
@@ -20,24 +65,30 @@ public sealed class MessageNormalizer
         {
             List<object?> values = new();
 
-            for (int index = 0;
-                 index < field.GetNumValues();
-                 index++)
+            for (int valueIndex = 0;
+                 valueIndex < field.GetNumValues();
+                 valueIndex++)
             {
-                values.Add(field.GetValue(index));
+                values.Add(
+                    field.GetValue(valueIndex));
             }
 
-            string fieldName = string.IsNullOrWhiteSpace(field.Name)
-                ? "UnknownField"
-                : field.Name;
+            string fieldName =
+                string.IsNullOrWhiteSpace(field.Name)
+                    ? "UnknownField"
+                    : field.Name;
 
-            string? clrDataType = values
-                .FirstOrDefault(value => value is not null)?
-                .GetType()
-                .FullName;
+            string? clrDataType =
+                values
+                    .FirstOrDefault(
+                        value => value is not null)?
+                    .GetType()
+                    .FullName;
 
             Field? profileField =
-                Profile.GetField(message.Num, field.Num);
+                Profile.GetField(
+                    message.Num,
+                    field.Num);
 
             string? fitDataType = null;
             string? units = null;
@@ -48,9 +99,10 @@ public sealed class MessageNormalizer
                     profileField.ProfileType.ToString();
 
                 units =
-                    string.IsNullOrWhiteSpace(profileField.Units)
-                        ? null
-                        : profileField.Units;
+                    string.IsNullOrWhiteSpace(
+                        profileField.Units)
+                            ? null
+                            : profileField.Units;
             }
 
             fields.Add(
@@ -60,72 +112,13 @@ public sealed class MessageNormalizer
                     fitDataType,
                     clrDataType,
                     units,
-                    values.AsReadOnly()));
+                    values));
         }
 
         return new NormalizedMessage(
             message.Name,
             message.Num,
-            fields.AsReadOnly());
-    }
-}
-
-public sealed class NormalizedMessage
-{
-    public string MessageName { get; }
-
-    public int MessageNumber { get; }
-
-    public IReadOnlyList<NormalizedField> Fields { get; }
-
-    public NormalizedMessage(
-        string messageName,
-        int messageNumber,
-        IReadOnlyList<NormalizedField> fields)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(messageName);
-        ArgumentNullException.ThrowIfNull(fields);
-
-        MessageName = messageName;
-        MessageNumber = messageNumber;
-
-        Fields = new ReadOnlyCollection<NormalizedField>(
-            fields.ToList());
-    }
-}
-
-public sealed class NormalizedField
-{
-    public string FieldName { get; }
-
-    public int FieldNumber { get; }
-
-    public string? FitDataType { get; }
-
-    public string? ClrDataType { get; }
-
-    public string? Units { get; }
-
-    public IReadOnlyList<object?> Values { get; }
-
-    public NormalizedField(
-        string fieldName,
-        int fieldNumber,
-        string? fitDataType,
-        string? clrDataType,
-        string? units,
-        IReadOnlyList<object?> values)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(fieldName);
-        ArgumentNullException.ThrowIfNull(values);
-
-        FieldName = fieldName;
-        FieldNumber = fieldNumber;
-        FitDataType = fitDataType;
-        ClrDataType = clrDataType;
-        Units = units;
-
-        Values = new ReadOnlyCollection<object?>(
-            values.ToList());
+            messageIndex,
+            fields);
     }
 }

@@ -8,9 +8,9 @@
     5. Returning validation errors.
 */
 
-using Dynastream.Fit;
+namespace FitParser.Extract;
 
-namespace FitParser.Core;
+using Dynastream.Fit;
 
 public sealed class FitFileChecker
 {
