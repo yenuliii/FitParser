@@ -1,3 +1,6 @@
+/*
+*/
+
 namespace FitParser.Models;
 
 using System.Collections.ObjectModel;

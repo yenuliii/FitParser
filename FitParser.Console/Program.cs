@@ -7,14 +7,16 @@ This is the entry point.
 4. Let the user select messages.
 5. Display available fields.
 6. Let the user select fields.
-7. Call the export service.
-8. Report success or errors.
+7. Ask how the table should be organized.
+8. Ask for the output format.
+9. Call the export service.
+10. Report success or errors.
 */
 
 using FitParser.Extract;
-using FitParser.Select;
 using FitParser.Export;
-using FitParser.Models; 
+using FitParser.Models;
+using FitParser.Select;
 
 Console.WriteLine("Yeni's FIT File Parser");
 Console.WriteLine("----------------------");
@@ -105,6 +107,9 @@ try
         return;
     }
 
+    FormatTableBasedOn tableFormat =
+        GetTableFormat();
+
     ExportFormat outputFormat =
         GetOutputFormat();
 
@@ -132,11 +137,15 @@ try
         exportService.Export(
             selectedCollection,
             outputFormat,
+            tableFormat,
             outputFilePath);
 
     if (!exportResult.IsSuccess)
     {
         Console.WriteLine();
+        Console.WriteLine(
+            "The data could not be exported.");
+
         Console.WriteLine(
             exportResult.ErrorMessage);
 
@@ -153,7 +162,8 @@ try
         "FIT file exported successfully.");
 
     Console.WriteLine(
-        $"Messages decoded: {collection.Count}");
+        $"Messages decoded: " +
+        $"{collection.Count}");
 
     Console.WriteLine(
         $"Messages selected: " +
@@ -162,6 +172,10 @@ try
     Console.WriteLine(
         $"Fields selected: " +
         $"{selectedFieldCount}");
+
+    Console.WriteLine(
+        $"Table organized by: " +
+        $"{tableFormat}");
 
     Console.WriteLine(
         $"Output format: " +
@@ -450,6 +464,49 @@ static HashSet<FieldKey> GetSelectedFieldKeys(
 
         Console.WriteLine(
             "Please enter valid field selections.");
+    }
+}
+
+static FormatTableBasedOn GetTableFormat()
+{
+    while (true)
+    {
+        Console.WriteLine();
+        Console.WriteLine(
+            "How should the table be organized?");
+
+        Console.WriteLine(
+            "1. Original message and field format");
+
+        Console.WriteLine(
+            "2. Timestamp-based format");
+
+        Console.Write(
+            "Select an organization format: ");
+
+        string? input =
+            Console.ReadLine();
+
+        if (input?.Trim() == "1" ||
+            string.Equals(
+                input?.Trim(),
+                "original",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return FormatTableBasedOn.Original;
+        }
+
+        if (input?.Trim() == "2" ||
+            string.Equals(
+                input?.Trim(),
+                "timestamp",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return FormatTableBasedOn.Timestamp;
+        }
+
+        Console.WriteLine(
+            "Invalid choice. Please select 1 or 2.");
     }
 }
 

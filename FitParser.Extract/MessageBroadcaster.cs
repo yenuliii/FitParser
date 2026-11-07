@@ -1,3 +1,6 @@
+/*
+*/ 
+
 namespace FitParser.Extract;
 
 using Dynastream.Fit;

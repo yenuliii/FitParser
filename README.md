@@ -30,3 +30,8 @@ Test TODO:
 Check data intergrity
 
 TODO: mention whether uses scales and offsets. 
+
+
+I broke the exporrt and program.cs something something, you'll handle it. cause rn itsjust showing me some random values. 
+and the fit epoch time 
+and also the program.cs should show all the fields 

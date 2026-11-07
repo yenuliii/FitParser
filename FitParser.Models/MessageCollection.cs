@@ -1,5 +1,7 @@
-namespace FitParser.Models;
+/*
+*/
 
+namespace FitParser.Models;
 public sealed class MessageCollection
 {
     private readonly List<NormalizedMessage> _messages = new();

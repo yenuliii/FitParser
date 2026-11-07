@@ -1,13 +1,19 @@
 /*
 */ 
 
-namespace FitParser.Export;
-
 using FitParser.Models;
+
+namespace FitParser.Export;
 
 public enum ExportFormat
 {
     Csv
+}
+
+public enum FormatTableBasedOn
+{
+    Original,
+    Timestamp
 }
 
 public sealed class ExportResult
@@ -46,18 +52,23 @@ public sealed class ExportResult
 public sealed class FitDataExportService
 {
     private readonly CsvExporter _csvExporter;
+    private readonly TimeSeriesFormatter _timeSeriesFormatter;
 
     public FitDataExportService()
     {
         _csvExporter = new CsvExporter();
+        _timeSeriesFormatter =
+            new TimeSeriesFormatter();
     }
 
     public ExportResult Export(
         MessageCollection collection,
         ExportFormat format,
+        FormatTableBasedOn formatTableBasedOn,
         string outputFilePath)
     {
         ArgumentNullException.ThrowIfNull(collection);
+
         ArgumentException.ThrowIfNullOrWhiteSpace(
             outputFilePath);
 
@@ -66,11 +77,10 @@ public sealed class FitDataExportService
             switch (format)
             {
                 case ExportFormat.Csv:
-                    _csvExporter.Export(
+                    return ExportCsv(
                         collection,
+                        formatTableBasedOn,
                         outputFilePath);
-
-                    return ExportResult.Success();
 
                 default:
                     return ExportResult.Failure(
@@ -83,6 +93,38 @@ public sealed class FitDataExportService
             return ExportResult.Failure(
                 $"The data could not be exported: " +
                 $"{exception.Message}");
+        }
+    }
+
+    private ExportResult ExportCsv(
+        MessageCollection collection,
+        FormatTableBasedOn formatTableBasedOn,
+        string outputFilePath)
+    {
+        switch (formatTableBasedOn)
+        {
+            case FormatTableBasedOn.Original:
+                _csvExporter.Export(
+                    collection,
+                    outputFilePath);
+
+                return ExportResult.Success();
+
+            case FormatTableBasedOn.Timestamp:
+                TimeSeriesTable timeSeriesTable =
+                    _timeSeriesFormatter.Format(
+                        collection);
+
+                _csvExporter.Export(
+                    timeSeriesTable,
+                    outputFilePath);
+
+                return ExportResult.Success();
+
+            default:
+                return ExportResult.Failure(
+                    "The selected table organization " +
+                    "is not supported.");
         }
     }
 }
