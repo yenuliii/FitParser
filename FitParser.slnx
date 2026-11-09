@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Backend/">
+    <Project Path="FitParser.Api/FitParser.Api.csproj" />
+    <Project Path="FitParser.Export/FitParser.Export.csproj" />
+    <Project Path="FitParser.Extract/FitParser.Extract.csproj" />
+    <Project Path="FitParser.Models/FitParser.Models.csproj" />
+    <Project Path="FitParser.Select/FitParser.Select.csproj" />
+    <Project Path="FitSDK/FitSDK.csproj" />
+  </Folder>
+  <Folder Name="/Clients/">
+    <Project Path="FitParser.Console/FitParser.Console.csproj" />
+  </Folder>
+  <Folder Name="/Frontend/">
+    <Project Path="FitParser.Web/FitParser.Web.csproj" />
+  </Folder>
+</Solution>

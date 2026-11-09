@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="FitParser.Api/FitParser.Api.csproj" />
+  <Project Path="FitParser.Console/FitParser.Console.csproj" />
+  <Project Path="FitParser.Export/FitParser.Export.csproj" />
+  <Project Path="FitParser.Extract/FitParser.Extract.csproj" />
+  <Project Path="FitParser.Models/FitParser.Models.csproj" />
+  <Project Path="FitParser.Select/FitParser.Select.csproj" />
+  <Project Path="FitParser.Web/FitParser.Web.csproj" />
+  <Project Path="FitSDK/FitSDK.csproj" />
+</Solution>
