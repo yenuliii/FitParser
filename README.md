@@ -5,7 +5,7 @@ Start date: Wednesday, October 7th, 2026
 
 */
 
-run with --> 
+run console with --> 
 
 cd ~/Desktop/sycamore/program_v2/FitParser
 
@@ -17,12 +17,21 @@ dotnet run --project FitParser.Console/FitParser.Console.csproj
 
 /Users/ /Desktop/fit_csv/program v2/FitParser/FitOutput/activity3.csv
 
+run webpage with --> 
+
+cd /Users/yenulidesilva/Desktop/sycamore/program_v2/FitParser
+
+dotnet run --project FitParser.Api
+
+//open another terminal and run 
+cd /Users/yenulidesilva/Desktop/sycamore/program_v2/FitParser
+dotnet run --project FitParser.Web
+
+http://localhost:5247
+
 TODO: 
 Work on implementing a way for the user to select time-period ( so must convert times, epoch, combine same timestaps, and what not ) 
 // we might have to convert times into normal times by finding which fields are of type date_time? 
-
-
-
 
 and implement a way for the user to select exactly which message they want. 
 
