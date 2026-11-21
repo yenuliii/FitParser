@@ -1,12 +1,14 @@
 /*
-This file defines the routes
-this like the api's front desk: 
-http request comes to this endpoint and it hands it 
-over to the FitParserApiService
-*/ 
+This file defines the routes.
+
+The endpoint acts like the API's front desk:
+HTTP requests arrive here and are passed
+to FitParserApiService.
+*/
 
 namespace FitParser.Api.Endpoints;
 
+using FitParser.Api.Contracts;
 using FitParser.Api.Services;
 
 public static class FitFileEndpoints
@@ -20,6 +22,12 @@ public static class FitFileEndpoints
                 AnalyzeAsync)
             .DisableAntiforgery();
 
+        endpoints
+            .MapPost(
+                "/api/fit/export",
+                ExportAsync)
+            .DisableAntiforgery();
+
         return endpoints;
     }
 
@@ -28,6 +36,15 @@ public static class FitFileEndpoints
         FitParserApiService apiService,
         CancellationToken cancellationToken)
     {
+        if (file is null)
+        {
+            return Results.BadRequest(
+                new
+                {
+                    error = "A FIT file is required."
+                });
+        }
+
         if (file.Length == 0)
         {
             return Results.BadRequest(
@@ -74,6 +91,63 @@ public static class FitFileEndpoints
         {
             return Results.Problem(
                 "The FIT file could not be analyzed.");
+        }
+    }
+
+    private static async Task<IResult> ExportAsync(
+        SelectFitDataRequest request,
+        FitParserApiService apiService,
+        CancellationToken cancellationToken)
+    {
+        if (request is null)
+        {
+            return Results.BadRequest(
+                new
+                {
+                    error = "An export request is required."
+                });
+        }
+
+        try
+        {
+            SelectedFitExportResult result =
+                await apiService.ExportSelectedAsync(
+                    request,
+                    cancellationToken);
+
+            return Results.File(
+                result.FileContents,
+                "text/csv",
+                result.FileName);
+        }
+        catch (ArgumentException exception)
+        {
+            return Results.BadRequest(
+                new
+                {
+                    error = exception.Message
+                });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.BadRequest(
+                new
+                {
+                    error = exception.Message
+                });
+        }
+        catch (FileNotFoundException exception)
+        {
+            return Results.NotFound(
+                new
+                {
+                    error = exception.Message
+                });
+        }
+        catch (Exception)
+        {
+            return Results.Problem(
+                "The selected FIT data could not be exported.");
         }
     }
 }

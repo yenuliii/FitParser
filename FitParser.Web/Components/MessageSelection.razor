@@ -1,0 +1,270 @@
+@using FitParser.Web.Models
+@using FitParser.Web.Services
+
+<div class="message-card">
+    <div class="message-header">
+        <label class="message-checkbox-label">
+            <input type="checkbox"
+                   checked="@IsMessageSelected"
+                   @onchange="HandleMessageChanged" />
+
+            <span class="checkbox-text">
+                <strong>@Message.MessageName</strong>
+
+                <span class="message-details">
+                    Message Number: @Message.MessageNumber
+                    • @Message.Occurrences occurrence(s)
+                </span>
+            </span>
+        </label>
+    </div>
+
+    <div class="fields-container">
+        <div class="fields-header">
+            <strong>Fields</strong>
+
+            @if (Message.Fields.Count > 0)
+            {
+                <span>
+                    @SelectedFieldCount of @Message.Fields.Count selected
+                </span>
+            }
+        </div>
+
+        @if (Message.Fields.Count == 0)
+        {
+            <p class="no-fields">
+                No fields were found for this message.
+            </p>
+        }
+        else
+        {
+            <div class="field-list">
+                @foreach (FieldResponse field in Message.Fields)
+                {
+                    SelectedFieldKey fieldKey =
+                        new(
+                            Message.MessageNumber,
+                            field.FieldNumber);
+
+                    bool isSelected =
+                        SelectedFieldKeys.Contains(fieldKey);
+
+                    <label class="field-row"
+                           @key="fieldKey">
+                        <input type="checkbox"
+                               checked="@isSelected"
+                               @onchange="@((ChangeEventArgs args) =>
+                                   HandleFieldChanged(
+                                       fieldKey,
+                                       args))" />
+
+                        <span class="field-name">
+                            @field.FieldName
+                        </span>
+
+                        <span class="field-number">
+                            Field @field.FieldNumber
+                        </span>
+
+                        <span class="field-occurrences">
+                            @field.Occurrences occurrence(s)
+                        </span>
+                    </label>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .message-card {
+        margin-bottom: 1rem;
+        overflow: hidden;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.05);
+    }
+
+    .message-header {
+        padding: 1.1rem 1.25rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .message-checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.8rem;
+        cursor: pointer;
+    }
+
+    .message-checkbox-label input,
+    .field-row input {
+        width: 1.15rem;
+        height: 1.15rem;
+        margin-top: 0.15rem;
+        accent-color: #0d6efd;
+        cursor: pointer;
+    }
+
+    .checkbox-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .checkbox-text strong {
+        color: #212529;
+        font-size: 1.1rem;
+    }
+
+    .message-details {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .fields-container {
+        padding: 1rem 1.25rem;
+    }
+
+    .fields-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+        color: #495057;
+    }
+
+    .fields-header span {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+
+    .field-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .field-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.7rem;
+        border: 1px solid #e9ecef;
+        border-radius: 0.4rem;
+        cursor: pointer;
+    }
+
+    .field-row:hover {
+        background: #f8f9fa;
+        border-color: #b6d4fe;
+    }
+
+    .field-name {
+        color: #212529;
+    }
+
+    .field-number,
+    .field-occurrences {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+
+    .no-fields {
+        margin: 0;
+        color: #6c757d;
+    }
+
+    @@media (max-width: 700px) {
+        .field-row {
+            grid-template-columns: auto 1fr;
+        }
+
+        .field-number,
+        .field-occurrences {
+            grid-column: 2;
+        }
+    }
+</style>
+
+@code {
+    [Parameter]
+    public MessageResponse Message { get; set; } = null!;
+
+    [Parameter]
+    public bool IsMessageSelected { get; set; }
+
+    [Parameter]
+    public IReadOnlySet<SelectedFieldKey>
+        SelectedFieldKeys { get; set; } =
+        new HashSet<SelectedFieldKey>();
+
+    [Parameter]
+    public EventCallback<bool>
+        MessageSelectionChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<SelectedFieldKey>
+        FieldSelected { get; set; }
+
+    [Parameter]
+    public EventCallback<SelectedFieldKey>
+        FieldUnselected { get; set; }
+
+    private async Task HandleMessageChanged(
+        ChangeEventArgs eventArgs)
+    {
+        bool isSelected =
+            eventArgs.Value is bool value &&
+            value;
+
+        await MessageSelectionChanged
+            .InvokeAsync(isSelected);
+    }
+
+    private async Task HandleFieldChanged(
+        SelectedFieldKey fieldKey,
+        ChangeEventArgs eventArgs)
+    {
+        bool isSelected =
+            eventArgs.Value is bool value &&
+            value;
+
+        if (isSelected)
+        {
+            await FieldSelected.InvokeAsync(fieldKey);
+        }
+        else
+        {
+            await FieldUnselected.InvokeAsync(fieldKey);
+        }
+    }
+
+        private int SelectedFieldCount
+        {
+            get
+            {
+                int count = 0;
+
+                foreach (
+                    FitParser.Web.Models.FieldResponse currentField
+                    in Message.Fields)
+                {
+                    SelectedFieldKey fieldKey =
+                        new(
+                            Message.MessageNumber,
+                            currentField.FieldNumber);
+
+                    if (SelectedFieldKeys.Contains(fieldKey))
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+}

@@ -29,6 +29,10 @@ dotnet run --project FitParser.Web
 
 http://localhost:5247
 
+run script using a webpage with --> 
+~/run-fitparser.sh
+
+
 TODO: 
 Work on implementing a way for the user to select time-period ( so must convert times, epoch, combine same timestaps, and what not ) 
 // we might have to convert times into normal times by finding which fields are of type date_time? 
@@ -44,3 +48,7 @@ TODO: mention whether uses scales and offsets.
 I broke the exporrt and program.cs something something, you'll handle it. cause rn itsjust showing me some random values. 
 and the fit epoch time 
 and also the program.cs should show all the fields 
+
+
+
+

@@ -1,0 +1,588 @@
+@page "/selection"
+
+@using FitParser.Web.Models
+@using FitParser.Web.Services
+@using FitParser.Web.Components
+
+@inject FitParserApiClient ApiClient
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<PageTitle>Select FIT Data</PageTitle>
+
+@if (analysisResult is null)
+{
+    <div class="loading-container">
+        <p>Returning to the upload page...</p>
+    </div>
+}
+else
+{
+    <div class="selection-page">
+        <div class="selection-container">
+            <div class="top-bar">
+                <button class="back-button"
+                        @onclick="ReturnToUpload">
+                    ← Analyze Another File
+                </button>
+            </div>
+
+            <header class="page-header">
+                <h1>Select FIT Data</h1>
+
+                <p>
+                    Choose the messages and fields you want to export.
+                    Selecting a message selects all of its fields.
+                </p>
+            </header>
+
+            <section class="file-information">
+                <h2>File Information</h2>
+
+                <div class="file-information-grid">
+                    <div class="information-item file-name">
+                        <span>File Name</span>
+                        <strong>@analysisResult.FileName</strong>
+                    </div>
+
+                    <div class="information-item">
+                        <span>Total Messages</span>
+                        <strong>@analysisResult.MessageCount</strong>
+                    </div>
+
+                    <div class="information-item">
+                        <span>Message Types</span>
+                        <strong>@analysisResult.Messages.Count</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="selection-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Messages and Fields</h2>
+
+                        <p>
+                            Select the data you want included in the CSV file.
+                        </p>
+                    </div>
+
+                    <span class="selection-count">
+                        @selectedMessageNumbers.Count message(s),
+                        @selectedFieldKeys.Count field(s)
+                    </span>
+                </div>
+
+                @if (analysisResult.Messages.Count == 0)
+                {
+                    <div class="empty-message">
+                        No messages were found in this file.
+                    </div>
+                }
+                else
+                {
+                    @foreach (MessageResponse message in analysisResult.Messages)
+                    {
+                        <MessageSelection
+                            @key="message.MessageNumber"
+                            Message="message"
+                            IsMessageSelected="@IsMessageSelected(message)"
+                            SelectedFieldKeys="selectedFieldKeys"
+                            MessageSelectionChanged="@((bool isSelected) =>
+                                HandleMessageSelectionChanged(
+                                    message,
+                                    isSelected))"
+                            FieldSelected="HandleFieldSelected"
+                            FieldUnselected="HandleFieldUnselected" />
+                    }
+                }
+            </section>
+
+            <section class="export-section">
+                <h2>CSV Format</h2>
+
+                <div class="format-options">
+                    <label class="format-option">
+                        <input type="radio"
+                               name="format"
+                               value="0"
+                               checked="@(formatTableBasedOn == 0)"
+                               @onchange="@(() =>
+                                   formatTableBasedOn = 0)" />
+
+                        <span>
+                            <strong>Original format</strong>
+                            <small>
+                                Preserve the original message structure.
+                            </small>
+                        </span>
+                    </label>
+
+                    <label class="format-option">
+                        <input type="radio"
+                               name="format"
+                               value="1"
+                               checked="@(formatTableBasedOn == 1)"
+                               @onchange="@(() =>
+                                   formatTableBasedOn = 1)" />
+
+                        <span>
+                            <strong>Timestamp format</strong>
+                            <small>
+                                Organize values into timestamp-based rows.
+                            </small>
+                        </span>
+                    </label>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="error-message">
+                        @errorMessage
+                    </div>
+                }
+
+                <button class="export-button"
+                        @onclick="ExportSelectedDataAsync"
+                        disabled="@isExporting">
+
+                    @if (isExporting)
+                    {
+                        <span class="spinner"></span>
+                        <span>Creating CSV...</span>
+                    }
+                    else
+                    {
+                        <span>Extract Selected Data</span>
+                    }
+                </button>
+            </section>
+        </div>
+    </div>
+}
+
+<style>
+    .selection-page {
+        min-height: 100vh;
+        padding: 2rem 1.5rem 4rem;
+        background: #f4f6f9;
+    }
+
+    .selection-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .top-bar {
+        margin-bottom: 2rem;
+    }
+
+    .back-button {
+        padding: 0.65rem 1rem;
+        border: 1px solid #0d6efd;
+        border-radius: 0.375rem;
+        background: white;
+        color: #0d6efd;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .back-button:hover {
+        background: #0d6efd;
+        color: white;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        margin-bottom: 0.5rem;
+        color: #212529;
+    }
+
+    .page-header p,
+    .section-heading p {
+        color: #6c757d;
+    }
+
+    .file-information,
+    .selection-section,
+    .export-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.08);
+    }
+
+    h2 {
+        margin-bottom: 1rem;
+        color: #212529;
+        font-size: 1.35rem;
+    }
+
+    .file-information-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .information-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        overflow: hidden;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+
+    .information-item span {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+    .information-item strong {
+        overflow: hidden;
+        color: #212529;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .section-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .section-heading h2 {
+        margin-bottom: 0.35rem;
+    }
+
+    .section-heading p {
+        margin: 0;
+    }
+
+    .selection-count {
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        background: #e9f2ff;
+        color: #0d6efd;
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    .format-options {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .format-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+
+    .format-option:hover {
+        border-color: #0d6efd;
+        background: #f8fbff;
+    }
+
+    .format-option input {
+        margin-top: 0.2rem;
+        accent-color: #0d6efd;
+    }
+
+    .format-option span {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .format-option small {
+        color: #6c757d;
+    }
+
+    .export-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+        padding: 0.9rem;
+        border: none;
+        border-radius: 0.5rem;
+        background: #198754;
+        color: white;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .export-button:hover {
+        background: #157347;
+    }
+
+    .export-button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .error-message {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .empty-message,
+    .loading-container {
+        padding: 2rem;
+        text-align: center;
+        color: #6c757d;
+    }
+
+    .spinner {
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 3px solid #b7e4c7;
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @@media (max-width: 750px) {
+        .file-information-grid,
+        .format-options {
+            grid-template-columns: 1fr;
+        }
+
+        .section-heading {
+            flex-direction: column;
+        }
+
+        .selection-count {
+            white-space: normal;
+        }
+    }
+</style>
+
+@code {
+    private AnalyzeFitResponse? analysisResult;
+
+    private readonly HashSet<int>
+        selectedMessageNumbers = [];
+
+    private readonly HashSet<SelectedFieldKey>
+        selectedFieldKeys = [];
+
+    private string? errorMessage;
+
+    private bool isExporting;
+
+    private int formatTableBasedOn;
+
+    protected override void OnInitialized()
+    {
+        analysisResult =
+            ApiClient.LastAnalysis;
+
+        if (analysisResult is null)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private bool IsMessageSelected(
+        MessageResponse message)
+    {
+        return selectedMessageNumbers.Contains(
+            message.MessageNumber);
+    }
+
+    private Task HandleMessageSelectionChanged(
+        MessageResponse message,
+        bool isSelected)
+    {
+        if (isSelected)
+        {
+            selectedMessageNumbers.Add(
+                message.MessageNumber);
+
+            foreach (FieldResponse field
+                in message.Fields)
+            {
+                selectedFieldKeys.Add(
+                    new SelectedFieldKey(
+                        message.MessageNumber,
+                        field.FieldNumber));
+            }
+        }
+        else
+        {
+            selectedMessageNumbers.Remove(
+                message.MessageNumber);
+
+            foreach (FieldResponse field
+                in message.Fields)
+            {
+                selectedFieldKeys.Remove(
+                    new SelectedFieldKey(
+                        message.MessageNumber,
+                        field.FieldNumber));
+            }
+        }
+
+        errorMessage =
+            null;
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleFieldSelected(
+        SelectedFieldKey fieldKey)
+    {
+        selectedFieldKeys.Add(
+            fieldKey);
+
+        UpdateMessageSelectionState(
+            fieldKey.MessageNumber);
+
+        errorMessage =
+            null;
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleFieldUnselected(
+        SelectedFieldKey fieldKey)
+    {
+        selectedFieldKeys.Remove(
+            fieldKey);
+
+        UpdateMessageSelectionState(
+            fieldKey.MessageNumber);
+
+        errorMessage =
+            null;
+
+        return Task.CompletedTask;
+    }
+
+    private void UpdateMessageSelectionState(
+    int messageNumber)
+    {
+        MessageResponse? message =
+            analysisResult?.Messages
+                .FirstOrDefault(item =>
+                    item.MessageNumber ==
+                    messageNumber);
+
+        if (message is null)
+        {
+            return;
+        }
+
+        bool anyFieldsSelected =
+            message.Fields.Any(field =>
+                selectedFieldKeys.Contains(
+                    new SelectedFieldKey(
+                        message.MessageNumber,
+                        field.FieldNumber)));
+
+        if (anyFieldsSelected)
+        {
+            selectedMessageNumbers.Add(
+                messageNumber);
+        }
+        else
+        {
+            selectedMessageNumbers.Remove(
+                messageNumber);
+        }
+    }
+
+    private async Task ExportSelectedDataAsync()
+    {
+        if (analysisResult is null)
+        {
+            errorMessage =
+                "No analyzed file is available.";
+
+            return;
+        }
+
+        if (selectedMessageNumbers.Count == 0)
+        {
+            errorMessage =
+                "Please select at least one message.";
+
+            return;
+        }
+
+        if (selectedFieldKeys.Count == 0)
+        {
+            errorMessage =
+                "Please select at least one field.";
+
+            return;
+        }
+
+        isExporting =
+            true;
+
+        errorMessage =
+            null;
+
+        try
+        {
+            ExportedFile exportedFile =
+                await ApiClient.ExportSelectedDataAsync(
+                    analysisResult.FileId,
+                    selectedMessageNumbers,
+                    selectedFieldKeys,
+                    formatTableBasedOn,
+                    CancellationToken.None);
+
+            await JS.InvokeVoidAsync(
+                "downloadFile",
+                exportedFile.FileName,
+                "text/csv",
+                exportedFile.Contents);
+        }
+        catch (Exception exception)
+        {
+            errorMessage =
+                $"The selected data could not be exported: " +
+                $"{exception.Message}";
+        }
+        finally
+        {
+            isExporting =
+                false;
+        }
+    }
+
+    private void ReturnToUpload()
+    {
+        ApiClient.ClearAnalysis();
+
+        Navigation.NavigateTo("/");
+    }
+}

@@ -7,6 +7,7 @@ using FitParser.Api.Endpoints;
 using FitParser.Api.Services;
 using FitParser.Api.Storage;
 using FitParser.Extract;
+using FitParser.Export;
 using FitParser.Select;
 
 WebApplicationBuilder builder =
@@ -32,6 +33,9 @@ builder.Services.AddScoped<
 
 builder.Services.AddScoped<
     FitDataSelectionService>();
+
+builder.Services.AddScoped<
+    FitDataExportService>();
 
 builder.Services.AddSingleton<
     ITemporaryFileStore,
