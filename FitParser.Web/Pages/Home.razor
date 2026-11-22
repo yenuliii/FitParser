@@ -1,7 +1,118 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using FitParser.Web.Services
 
-<h1>Hello, world!</h1>
+@inject FitParserApiClient ApiClient
+@inject IJSRuntime JavaScript
 
-Welcome to your new app.
+<PageTitle>FIT Parser</PageTitle>
+
+<h1>FIT Parser</h1>
+
+<p>Choose a FIT file to extract and export all of its data.</p>
+
+<InputFile
+    OnChange="HandleFileSelected"
+    accept=".fit" />
+
+@if (_selectedFile is not null)
+{
+    <p>
+        Selected file:
+        <strong>@_selectedFile.Name</strong>
+    </p>
+}
+
+<button
+    @onclick="ExportAllAsync"
+    disabled="@(_selectedFile is null || _isProcessing)">
+    @(_isProcessing ? "Processing..." : "Upload and Export All")
+</button>
+
+@if (!string.IsNullOrWhiteSpace(_statusMessage))
+{
+    <p>@_statusMessage</p>
+}
+
+@if (!string.IsNullOrWhiteSpace(_errorMessage))
+{
+    <p style="color: red;">
+        @_errorMessage
+    </p>
+}
+
+@code {
+    private IBrowserFile? _selectedFile;
+
+    private bool _isProcessing;
+
+    private string? _statusMessage;
+
+    private string? _errorMessage;
+
+    private void HandleFileSelected(
+        InputFileChangeEventArgs eventArgs)
+    {
+        _selectedFile =
+            eventArgs.File;
+
+        _statusMessage = null;
+        _errorMessage = null;
+    }
+
+    private async Task ExportAllAsync()
+    {
+        if (_selectedFile is null)
+        {
+            return;
+        }
+
+        _isProcessing = true;
+        _statusMessage = "Extracting and exporting data...";
+        _errorMessage = null;
+
+        try
+        {
+            ExportResponse response =
+                await ApiClient.ExportAllAsync(
+                    _selectedFile);
+
+            if (!response.IsSuccess ||
+                response.CsvBytes is null)
+            {
+                _statusMessage = null;
+                _errorMessage =
+                    response.ErrorMessage
+                    ?? "The file could not be exported.";
+
+                return;
+            }
+
+            string base64Data =
+                Convert.ToBase64String(
+                    response.CsvBytes);
+
+            await JavaScript.InvokeVoidAsync(
+                "downloadFile",
+                "fit-export.csv",
+                "text/csv",
+                base64Data);
+
+            _statusMessage =
+                "The FIT file was exported successfully.";
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = null;
+            _errorMessage =
+                $"An unexpected error occurred: " +
+                exception.Message;
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+}
