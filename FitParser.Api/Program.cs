@@ -1,41 +1,156 @@
-var builder = WebApplication.CreateBuilder(args);
+using FitParser.Extract;
+using FitParser.Export;
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+WebApplicationBuilder builder =
+    WebApplication.CreateBuilder(args);
 
-var app = builder.Build();
+builder.Services.AddScoped<
+    FitDataExtractionService>();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+builder.Services.AddScoped<
+    FitDataExportService>();
 
-app.UseHttpsRedirection();
+builder.Services.AddCors(
+    options =>
+    {
+        options.AddPolicy(
+            "FitParserWeb",
+            policy =>
+            {
+                policy
+                    .AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+    });
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+WebApplication app =
+    builder.Build();
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.UseCors("FitParserWeb");
+
+app.MapGet(
+    "/api/health",
+    () => Results.Ok(
+        new
+        {
+            status = "API is running"
+        }));
+
+app.MapPost(
+    "/api/fit/export-all",
+    async (
+        IFormFile? file,
+        FitDataExtractionService extractionService,
+        FitDataExportService exportService) =>
+    {
+        if (file is null || file.Length == 0)
+        {
+            return Results.BadRequest(
+                new
+                {
+                    error = "A FIT file is required."
+                });
+        }
+
+        string fileExtension =
+            Path.GetExtension(file.FileName);
+
+        if (!string.Equals(
+                fileExtension,
+                ".fit",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.BadRequest(
+                new
+                {
+                    error = "Only .fit files are supported."
+                });
+        }
+
+        string fileId =
+            Guid.NewGuid().ToString("N");
+
+        string inputFilePath =
+            Path.Combine(
+                Path.GetTempPath(),
+                $"{fileId}.fit");
+
+        string outputFilePath =
+            Path.Combine(
+                Path.GetTempPath(),
+                $"{fileId}.csv");
+
+        try
+        {
+            await using (
+                FileStream inputStream =
+                    new(
+                        inputFilePath,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.None))
+            {
+                await file.CopyToAsync(inputStream);
+            }
+
+            FitExtractionResult extractionResult =
+                extractionService.Extract(
+                    inputFilePath);
+
+            if (!extractionResult.IsSuccess ||
+                extractionResult.Collection is null)
+            {
+                return Results.BadRequest(
+                    new
+                    {
+                        error =
+                            extractionResult.ErrorMessage
+                            ?? "The FIT file could not be extracted."
+                    });
+            }
+
+            ExportResult exportResult =
+                exportService.Export(
+                    extractionResult.Collection,
+                    ExportFormat.Csv,
+                    outputFilePath);
+
+            if (!exportResult.IsSuccess)
+            {
+                return Results.Problem(
+                    exportResult.ErrorMessage
+                    ?? "The FIT data could not be exported.");
+            }
+
+            byte[] csvBytes =
+                await File.ReadAllBytesAsync(
+                    outputFilePath);
+
+            return Results.File(
+                csvBytes,
+                "text/csv",
+                "fit-export.csv");
+        }
+        catch (Exception exception)
+        {
+            return Results.Problem(
+                $"The FIT file could not be processed: " +
+                exception.Message);
+        }
+        finally
+        {
+            if (File.Exists(inputFilePath))
+            {
+                File.Delete(inputFilePath);
+            }
+
+            if (File.Exists(outputFilePath))
+            {
+                File.Delete(outputFilePath);
+            }
+        }
+    })
+    .DisableAntiforgery();
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
