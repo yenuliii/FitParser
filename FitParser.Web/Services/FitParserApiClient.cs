@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Components.Forms;
+using System.Net.Http.Json;
 
 namespace FitParser.Web.Services;
 
@@ -52,6 +53,46 @@ public sealed class FitParserApiClient
 
         return ExportResponse.Success(csvBytes);
     }
+
+    public async Task<AnalyzeResponse> AnalyzeAsync(
+    IBrowserFile file)
+    {
+        using MultipartFormDataContent form =
+            new();
+
+        await using Stream fileStream =
+            file.OpenReadStream(
+                maxAllowedSize: 100_000_000);
+
+        using StreamContent fileContent =
+            new(fileStream);
+
+        form.Add(
+            fileContent,
+            "file",
+            file.Name);
+
+        using HttpResponseMessage response =
+            await _httpClient.PostAsync(
+                "api/fit/analyze",
+                form);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string error =
+                await response.Content.ReadAsStringAsync();
+
+            return AnalyzeResponse.Failure(error);
+        }
+
+        AnalyzeResponse? result =
+            await response.Content
+                .ReadFromJsonAsync<AnalyzeResponse>();
+
+        return result
+            ?? AnalyzeResponse.Failure(
+                "The API returned an empty response.");
+    }
 }
 
 public sealed class ExportResponse
@@ -89,4 +130,47 @@ public sealed class ExportResponse
             null,
             errorMessage);
     }
+}
+
+public sealed class AnalyzeResponse
+{
+    public List<AvailableMessageModel> Messages { get; set; } = [];
+
+    public List<AvailableFieldModel> Fields { get; set; } = [];
+
+    public string? ErrorMessage { get; set; }
+
+    public bool IsSuccess =>
+        ErrorMessage is null;
+
+    public static AnalyzeResponse Failure(
+        string errorMessage)
+    {
+        return new AnalyzeResponse
+        {
+            ErrorMessage = errorMessage
+        };
+    }
+}
+
+public sealed class AvailableMessageModel
+{
+    public int MessageNumber { get; set; }
+
+    public string MessageName { get; set; } = string.Empty;
+
+    public int Count { get; set; }
+}
+
+public sealed class AvailableFieldModel
+{
+    public int MessageNumber { get; set; }
+
+    public string MessageName { get; set; } = string.Empty;
+
+    public int FieldNumber { get; set; }
+
+    public string FieldName { get; set; } = string.Empty;
+
+    public int Count { get; set; }
 }

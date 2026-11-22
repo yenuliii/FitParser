@@ -11,7 +11,7 @@
 
 <h1>FIT Parser</h1>
 
-<p>Choose a FIT file to extract and export all of its data.</p>
+<p>Choose a FIT file to analyze or export.</p>
 
 <InputFile
     OnChange="HandleFileSelected"
@@ -23,13 +23,19 @@
         Selected file:
         <strong>@_selectedFile.Name</strong>
     </p>
-}
 
-<button
-    @onclick="ExportAllAsync"
-    disabled="@(_selectedFile is null || _isProcessing)">
-    @(_isProcessing ? "Processing..." : "Upload and Export All")
-</button>
+    <button
+        @onclick="AnalyzeFileAsync"
+        disabled="@_isAnalyzing">
+        @(_isAnalyzing ? "Analyzing..." : "Analyze File")
+    </button>
+
+    <button
+        @onclick="ExportAllAsync"
+        disabled="@_isExporting">
+        @(_isExporting ? "Exporting..." : "Export All Data")
+    </button>
+}
 
 @if (!string.IsNullOrWhiteSpace(_statusMessage))
 {
@@ -43,10 +49,71 @@
     </p>
 }
 
+@if (_analysis is not null && _analysis.IsSuccess)
+{
+    <hr />
+
+    <h2>Messages</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Number</th>
+                <th>Name</th>
+                <th>Occurrences</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (AvailableMessageModel message
+                in _analysis.Messages)
+            {
+                <tr>
+                    <td>@message.MessageNumber</td>
+                    <td>@message.MessageName</td>
+                    <td>@message.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>Fields</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Message</th>
+                <th>Message Number</th>
+                <th>Field</th>
+                <th>Field Number</th>
+                <th>Occurrences</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (AvailableFieldModel field
+                in _analysis.Fields)
+            {
+                <tr>
+                    <td>@field.MessageName</td>
+                    <td>@field.MessageNumber</td>
+                    <td>@field.FieldName</td>
+                    <td>@field.FieldNumber</td>
+                    <td>@field.Count</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
 @code {
     private IBrowserFile? _selectedFile;
 
-    private bool _isProcessing;
+    private AnalyzeResponse? _analysis;
+
+    private bool _isAnalyzing;
+
+    private bool _isExporting;
 
     private string? _statusMessage;
 
@@ -55,11 +122,53 @@
     private void HandleFileSelected(
         InputFileChangeEventArgs eventArgs)
     {
-        _selectedFile =
-            eventArgs.File;
-
+        _selectedFile = eventArgs.File;
+        _analysis = null;
         _statusMessage = null;
         _errorMessage = null;
+    }
+
+    private async Task AnalyzeFileAsync()
+    {
+        if (_selectedFile is null)
+        {
+            return;
+        }
+
+        _isAnalyzing = true;
+        _statusMessage = "Analyzing FIT file...";
+        _errorMessage = null;
+
+        try
+        {
+            AnalyzeResponse response =
+                await ApiClient.AnalyzeAsync(
+                    _selectedFile);
+
+            if (!response.IsSuccess)
+            {
+                _analysis = null;
+                _statusMessage = null;
+                _errorMessage =
+                    response.ErrorMessage
+                    ?? "The file could not be analyzed.";
+
+                return;
+            }
+
+            _analysis = response;
+            _statusMessage =
+                "The FIT file was analyzed successfully.";
+        }
+        catch (Exception exception)
+        {
+            _statusMessage = null;
+            _errorMessage = exception.Message;
+        }
+        finally
+        {
+            _isAnalyzing = false;
+        }
     }
 
     private async Task ExportAllAsync()
@@ -69,8 +178,8 @@
             return;
         }
 
-        _isProcessing = true;
-        _statusMessage = "Extracting and exporting data...";
+        _isExporting = true;
+        _statusMessage = "Exporting all data...";
         _errorMessage = null;
 
         try
@@ -106,13 +215,11 @@
         catch (Exception exception)
         {
             _statusMessage = null;
-            _errorMessage =
-                $"An unexpected error occurred: " +
-                exception.Message;
+            _errorMessage = exception.Message;
         }
         finally
         {
-            _isProcessing = false;
+            _isExporting = false;
         }
     }
 }
